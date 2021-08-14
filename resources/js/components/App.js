@@ -16,31 +16,42 @@ const App = () => {
 
     function onSubmit(e) {
         reset();
+        sendUserChat(e.message);
+        sendBotChat(e.message);
+    }
+
+    // ユーザー入力
+    function sendUserChat(arg_message){
         let message = chatMessage;
         setChatMessage([...chatMessage, {
-            user: 'user', type: 'text', message: e.message,
+            user: 'user', type: 'text', message: arg_message,
         }]);
-        message.push({ user: 'user', type: 'text', message: e.message });
+        message.push({ user: 'user', type: 'text', message: arg_message });
+        renderChatMessage(message);
+    }
 
+    function sendBotChat(arg_message){
+        let message = chatMessage;
         fetch('/api/bot', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: e.message }),
+            body: JSON.stringify({ message: arg_message }),
         })
-            .then(res => res.json())
-            .then(objects => {
-                setSentiment(objects.sentimentObj.sentiment);
-                setSentimentScore(objects.sentimentObj.sentimentScore);
+        .then(res => res.json())
+        .then(objects => {
+            setSentiment(objects.sentimentObj.sentiment);
+            setSentimentScore(objects.sentimentObj.sentimentScore);
 
-                objects.watsonTexts.map(val => {
-                    setChatMessage([...chatMessage,
-                    { user: 'bot', type: val.response_type, message: val.text, }
-                    ]);
-                    message.push({ user: 'bot', type: val.response_type, message: val.text, options: val.response_type == 'option' && val.options });
-                })
-                renderChatMessage(message);
+            console.log(objects.watsonTexts)
+            objects.watsonTexts.map(val => {
+                setChatMessage([...chatMessage,
+                { user: 'bot', type: val.response_type, message: val.text, }
+                ]);
+                message.push({ user: 'bot', type: val.response_type, message: val.text, options: val.response_type == 'option' && val.options });
             })
-            .catch(error => console.log(error));
+            renderChatMessage(message);
+        })
+        .catch(error => console.log(error));
     }
 
     function renderChatMessage(message) {
@@ -50,10 +61,14 @@ const App = () => {
             if (val.type === 'text') {
                 elms.push(<div key={index} className={'arrow_box ' + val.user}>{val.message}</div>);
             } else if (val.type === 'option') {
-                val.options.map((op_val, op_index) => {
-                    console.log(op_val)
-                    elms.push(<button key={op_index}>{op_val.value.input.text}</button>);
-                })
+                const answerElm = <div key={index} className={'arrow_box ' + val.user}>{
+                    val.options.map((op_val, op_index) => {
+                        return (<button key={op_index} className="answerButton">
+                            {op_val.value.input.text}
+                        </button>);
+                    })
+                }</div>
+                elms.push(answerElm);
             }
         })
         ReactDOM.render(elms, document.getElementById('chat_message'));

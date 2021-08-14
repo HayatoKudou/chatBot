@@ -1979,30 +1979,42 @@ var App = function App() {
 
   function onSubmit(e) {
     reset();
+    sendUserChat(e.message);
+    sendBotChat(e.message);
+  } // ユーザー入力
+
+
+  function sendUserChat(arg_message) {
     var message = chatMessage;
     setChatMessage([].concat(_toConsumableArray(chatMessage), [{
       user: 'user',
       type: 'text',
-      message: e.message
+      message: arg_message
     }]));
     message.push({
       user: 'user',
       type: 'text',
-      message: e.message
+      message: arg_message
     });
+    renderChatMessage(message);
+  }
+
+  function sendBotChat(arg_message) {
+    var message = chatMessage;
     fetch('/api/bot', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        message: e.message
+        message: arg_message
       })
     }).then(function (res) {
       return res.json();
     }).then(function (objects) {
       setSentiment(objects.sentimentObj.sentiment);
       setSentimentScore(objects.sentimentObj.sentimentScore);
+      console.log(objects.watsonTexts);
       objects.watsonTexts.map(function (val) {
         setChatMessage([].concat(_toConsumableArray(chatMessage), [{
           user: 'bot',
@@ -2032,12 +2044,17 @@ var App = function App() {
           children: val.message
         }, index));
       } else if (val.type === 'option') {
-        val.options.map(function (op_val, op_index) {
-          console.log(op_val);
-          elms.push( /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("button", {
-            children: op_val.value.input.text
-          }, op_index));
-        });
+        var answerElm = /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("div", {
+          className: 'arrow_box ' + val.user,
+          children: val.options.map(function (op_val, op_index) {
+            return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("button", {
+              className: "answerButton",
+              children: op_val.value.input.text
+            }, op_index);
+          })
+        }, index);
+
+        elms.push(answerElm);
       }
     });
     react_dom__WEBPACK_IMPORTED_MODULE_1__.render(elms, document.getElementById('chat_message'));
