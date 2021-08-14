@@ -1966,6 +1966,7 @@ var App = function App() {
 
   var _useState5 = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)([{
     user: 'bot',
+    type: 'text',
     message: 'はじめまして、結月ゆかりです。'
   }]),
       _useState6 = _slicedToArray(_useState5, 2),
@@ -1981,13 +1982,15 @@ var App = function App() {
     var message = chatMessage;
     setChatMessage([].concat(_toConsumableArray(chatMessage), [{
       user: 'user',
+      type: 'text',
       message: e.message
     }]));
     message.push({
       user: 'user',
+      type: 'text',
       message: e.message
     });
-    fetch('/api/getSentiment', {
+    fetch('/api/bot', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -1998,15 +2001,20 @@ var App = function App() {
     }).then(function (res) {
       return res.json();
     }).then(function (objects) {
-      setSentiment(objects.sentiment);
-      setSentimentScore(objects.sentimentScore);
-      setChatMessage([].concat(_toConsumableArray(chatMessage), [{
-        user: 'bot',
-        message: objects.sentiment
-      }]));
-      message.push({
-        user: 'bot',
-        message: objects.sentiment
+      setSentiment(objects.sentimentObj.sentiment);
+      setSentimentScore(objects.sentimentObj.sentimentScore);
+      objects.watsonTexts.map(function (val) {
+        setChatMessage([].concat(_toConsumableArray(chatMessage), [{
+          user: 'bot',
+          type: val.response_type,
+          message: val.text
+        }]));
+        message.push({
+          user: 'bot',
+          type: val.response_type,
+          message: val.text,
+          options: val.response_type == 'option' && val.options
+        });
       });
       renderChatMessage(message);
     })["catch"](function (error) {
@@ -2018,10 +2026,19 @@ var App = function App() {
     var elms = [];
     console.log(message);
     message.map(function (val, index) {
-      elms.push( /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("div", {
-        className: 'arrow_box ' + val.user,
-        children: val.message
-      }, index));
+      if (val.type === 'text') {
+        elms.push( /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("div", {
+          className: 'arrow_box ' + val.user,
+          children: val.message
+        }, index));
+      } else if (val.type === 'option') {
+        val.options.map(function (op_val, op_index) {
+          console.log(op_val);
+          elms.push( /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("button", {
+            children: op_val.value.input.text
+          }, op_index));
+        });
+      }
     });
     react_dom__WEBPACK_IMPORTED_MODULE_1__.render(elms, document.getElementById('chat_message'));
     var el = document.getElementById('chat_message');
@@ -2061,7 +2078,7 @@ var App = function App() {
         }, register('message', {
           required: true
         })), {}, {
-          autocomplete: "off"
+          autoComplete: "off"
         }))
       })]
     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_3__.jsx)("img", {
